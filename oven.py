@@ -25,7 +25,7 @@ reset = 0xFE
 heating_gpio = 22
 
 #target temperature
-target_temp = 30
+target_temp = 25
 
 def htu_reset():
 	handle = pi.i2c_open(bus, addr) # open i2c bus
@@ -76,4 +76,4 @@ while True:
 	if temp >= target_temp and pi.read(heating_gpio) == 0:
 		pi.write(heating_gpio, 1)
 		print "Turning off heating"
-	time.sleep(5)
+	time.sleep(30)

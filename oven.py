@@ -25,7 +25,7 @@ reset = 0xFE
 heating_gpio = 22
 
 #target temperature
-target_temp = 25
+target_temp = 34
 
 def htu_reset():
 	handle = pi.i2c_open(bus, addr) # open i2c bus
@@ -69,11 +69,19 @@ pi.set_mode(heating_gpio, pigpio.OUTPUT)
 
 while True:
 	temp = read_temperature()
-	print "Current temperateure:", temp, "heating is: ", pi.read(heating_gpio)
+	hum = read_humidity()
+	print "Current temperateure/humid:", temp,"/",hum, "heating is: ", pi.read(heating_gpio)
 	if temp < target_temp and pi.read(heating_gpio) == 1:
 		pi.write(heating_gpio, 0)
+		pi.hardware_PWM(18,25000, 700000)
 		print "Turning on heating"
-	if temp >= target_temp and pi.read(heating_gpio) == 0:
+	if temp >= (target_temp+0.5) and pi.read(heating_gpio) == 0:
 		pi.write(heating_gpio, 1)
+		pi.hardware_PWM(18,25000, 100000)
 		print "Turning off heating"
+
+	now = datetime.datetime.today()	
+	line = "%s,%s,%s\n" %(now, temp, hum)
+	with open("test.txt", "a") as myfile:
+		myfile.write(line)
 	time.sleep(30)

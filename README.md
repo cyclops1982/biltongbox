@@ -1,4 +1,7 @@
 # Biltongbox
 
-Raspberry pi with some breakout modules that is supposed to control temperateure in a box, while monitoring humidity and controlling some fans.
-Current status: Just a backup of some scripts that i have
+Scripts that helped me develop and control my biltongbox.
+
+The simple aim is to control temp and humidity a bit better. This is mainly done by controling temp and air speed.
+
+

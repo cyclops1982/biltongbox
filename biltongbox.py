@@ -107,7 +107,7 @@ def startup():
 	pi.set_mode(gpio_allneutral, pigpio.OUTPUT)
 
 	htu_reset()
-	Neutral(true)
+	Neutral(True)
 
 
 
@@ -122,6 +122,15 @@ def makeBiltong(cmds):
 			line = "%s,%s,%s\n" %(now, temp, hum)
 			with open("test.txt", "a") as myfile:
 				myfile.write(line)
+
+			if (temp < target_temp and IsHeating() == False):
+				Heating(True)
+				Fan1(50)
+				print "Heating On, Fan to 50%"
+			if (temp >= (target_temp+0.5) and IsHeating() == True):
+				Heating(False)
+				Fan1(10)
+				print "Heating Off, Fan to 10%"
 			i=0
 		
 		if (cmds.empty() == False):

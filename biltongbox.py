@@ -126,8 +126,8 @@ def makeBiltong(cmds):
 		if (i > 10):
 			(temp, hum) = read_environment()
 			now = datetime.datetime.today()	
-			line = "%s,%s,%s\n" %(now, temp, hum)
-			with open("test.txt", "a") as myfile:
+			line = "%s,%s,%s,%d,%d,%d,%d,%d\n" %(now, temp, hum, IsHeating(), FanSpeed1(), target_temp,fan1_heatspeed,fan1_nonheatspeed)
+			with open("biltong.csv", "a") as myfile:
 				myfile.write(line)
 
 			if (temp < target_temp and IsHeating() == False):
@@ -140,7 +140,9 @@ def makeBiltong(cmds):
 		
 		if (cmds.empty() == False):
 			line = cmds.get()
+			print
 			print "Parsing: ", line
+
 			if line == 'quit':
 				Heating(False)
 				Fan1(0)
@@ -150,21 +152,36 @@ def makeBiltong(cmds):
 			if line.startswith('temp') == True:
 				target_temp = int(line[5:])
 				print "Setting target temp to ", target_temp
+				i=10
 			
 
 			if line.startswith('fanspeedon') == True:
 				fan1_heatspeed = int(line[11:])
 				print "Setting heating on fan speed to ", fan1_heatspeed
+				if (IsHeating() == True):
+					Fan1(fan1_heatspeed)
 
 			if line.startswith('fanspeedoff') == True:
 				fan1_nonheatspeed = int(line[12:])
 				print "Setting heating on fan speed to ", fan1_nonheatspeed
+				if (IsHeating() == False):
+					Fan1(fan1_nonheatspeed)
 
 			if line == 'status':
 				(temp, hum) = read_environment()
 				print "Current temperateure/humid:", temp,"/",hum
 				print "Heating is:", IsHeating()
 				print "FanSpeed  :", FanSpeed1()
+				print "Target temp:", target_temp
+				print "Fan On Speed:", fan1_heatspeed
+				print "Fan Off Speed:", fan1_nonheatspeed
+
+			if line == 'help':
+				print "Possible commands:"
+				print "status - get the current biltongbox status"
+				print "fanspeedoff <nr 0-100> - set the fanspeed when heating is off"
+				print "fanspeedon <nr 0-100> - set the fanspeed when heating is on"
+				print "temp <nr> - set the targetted temperature"
 
 		time.sleep(1)
 		i = i+1

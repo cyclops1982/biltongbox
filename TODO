@@ -1,2 +1,0 @@
-https://github.com/urwid/urwid/ - for console + output
-Move to threading because multiprocessing isn't good.

@@ -18,10 +18,16 @@ addr = 0x40
 bus = 1
 
 # GPIO's
-gpio_heating1 = 24
-gpio_fan1 = 22
-gpio_allneutral = 23
-gpio_pwm_fan1 = 18
+gpio_fanneutral = 4
+gpio_heating1 = 5
+gpio_heating2 = 22
+gpio_fan1 = 17
+
+gpio_fan2 = 27
+gpio_heatingneutral = 6
+gpio_pwm_fan1 = 12
+gpio_pwm_fan2 = 13
+
 
 def htu_reset():
 	handle = pi.i2c_open(bus, addr) 
@@ -50,20 +56,33 @@ def read_environment():
 	return (temp, humidity)
 	
 
-def IsNeutral():
-	if (pi.read(gpio_allneutral) == 1):
-		return False
-	else:
+def IsHeatingNeutral():
+	if (pi.read(gpio_heatingneutral) == 1):
 		return True
-
-def Neutral(onOff):
-	if (onOff == True):
-		pi.write(gpio_allneutral, 0)
 	else:
-		pi.write(gpio_allneutral, 1)
+		return False
+
+def IsFanNeutral():
+	if (pi.read(gpio_fanneutral) == 1):
+		return True
+	else:
+		return False
+
+def HeatingNeutral(onOff):
+	if (onOff == True):
+		pi.write(gpio_heatingneutral, 0)
+	else:
+		pi.write(gpio_heatingneutral, 1)
+
+
+def FanNeutral(onOff):
+	if (onOff == True):
+		pi.write(gpio_fanneutral, 0)
+	else:
+		pi.write(gpio_fanneutral, 1)
 
 def Fan1(speed):
-	if (IsNeutral() == False):
+	if (IsFanNeutral() == False):
 		print "Trying to switch on fan but neutral is off"
 		return False
 	
@@ -75,42 +94,91 @@ def Fan1(speed):
 		pi.hardware_PWM(gpio_pwm_fan1, 25000, speed*10000)
 		print "[Fan1] Setting to", speed,"%"
 
+
+def Fan2(speed):
+	if (IsFanNeutral() == False):
+		print "Trying to switch on fan but neutral is off"
+		return False
+	
+	if (speed < 10):
+		pi.write(gpio_fan2, 0)
+		print "[Fan2] Turning off."
+	else:
+		pi.write(gpio_fan2, 1)
+		pi.hardware_PWM(gpio_pwm_fan2, 25000, speed*10000)
+		print "[Fan2] Setting to", speed,"%"
+
+
 def FanSpeed1():
-	if (IsNeutral() == False or pi.read(gpio_fan1) == 0):
+	if (IsFanNeutral() == False or pi.read(gpio_fan1) == 0):
 		return 0
 
 	speed = pi.get_PWM_dutycycle(gpio_pwm_fan1)
 	return (speed / 10000)
 
+def FanSpeed2():
+	if (IsFanNeutral() == False or pi.read(gpio_fan2) == 0):
+		return 0
 
-def Heating(onOff):
-	if (IsNeutral() == False):
-		print "Truing to switch on heating but neutral is off"
+	speed = pi.get_PWM_dutycycle(gpio_pwm_fan2)
+	return (speed / 10000)
+
+def IsHeating1():
+	if (IsHeatingNeutral() == False):
 		return False
-
-	if (onOff == True):
-		pi.write(gpio_heating1, 1)
-		print "[Heat] Turning on"
-	else:
-		pi.write(gpio_heating1, 0)
-		print "[Heat] Turning off"
-
-
-def IsHeating():
-	if (IsNeutral() == False or pi.read(gpio_heating1) == 0):
+	
+	if (pi.read(gpio_heating1) == 0):
 		return False
 	else:
 		return True
 
+def IsHeating1():
+	if (IsHeatingNeutral() == False):
+		return False
+	
+	if (pi.read(gpio_heating2) == 0):
+		return False
+	else:
+		return True
+
+
+def Heat1(onOff):
+	if (IsHeatingNeutral() == False):
+		print "Trying to switch on heating but neutral is off"
+		return False
+
+	if (onOff == True):
+		pi.write(gpio_heating1, 1)
+		print "[Heat1] Turning on"
+	else:
+		pi.write(gpio_heating1, 0)
+		print "[Heat1] Turning off"
+
+def Heat2(onOff):
+	if (IsHeatingNeutral() == False):
+		print "Trying to switch on heating but neutral is off"
+		return False
+
+	if (onOff == True):
+		pi.write(gpio_heating2, 1)
+		print "[Heat2] Turning on"
+	else:
+		pi.write(gpio_heating2, 0)
+		print "[Heat2] Turning off"
+
+
 def startup():
 	# Setup our GPIO's
 	pi.set_mode(gpio_heating1, pigpio.OUTPUT)
+	pi.set_mode(gpio_heating2, pigpio.OUTPUT)
+	pi.set_mode(gpio_heatingneutral, pigpio.OUTPUT)
 	pi.set_mode(gpio_fan1, pigpio.OUTPUT)
-	pi.set_mode(gpio_allneutral, pigpio.OUTPUT)
+	pi.set_mode(gpio_fan2, pigpio.OUTPUT)
+	pi.set_mode(gpio_fanneutral, pigpio.OUTPUT)
+	pi.set_mode(gpio_pwm_fan1, pigpio.OUTPUT)
+	pi.set_mode(gpio_pwm_fan2, pigpio.OUTPUT)
 
 	htu_reset()
-	Neutral(True)
-
 
 
 
@@ -126,7 +194,7 @@ def makeBiltong(cmds):
 		if (i > 10):
 			(temp, hum) = read_environment()
 			now = datetime.datetime.today()	
-			line = "%s,%s,%s,%d,%d,%d,%d,%d\n" %(now, temp, hum, IsHeating(), FanSpeed1(), target_temp,fan1_heatspeed,fan1_nonheatspeed)
+			line = "%s,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" %(now, temp, hum, IsHeating1(), IsHeating2(), FanSpeed1(), FanSpeed2(), target_temp)
 			with open("biltong.csv", "a") as myfile:
 				myfile.write(line)
 

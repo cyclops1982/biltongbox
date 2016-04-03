@@ -21,12 +21,11 @@ bus = 1
 gpio_fanneutral = 4
 gpio_heating1 = 5
 gpio_heating2 = 22
-gpio_fan1 = 17
-
-gpio_fan2 = 27
+gpio_fan1 = 27
+gpio_fan2 = 17
 gpio_heatingneutral = 6
-gpio_pwm_fan1 = 12
-gpio_pwm_fan2 = 13
+gpio_pwm_fan1 = 13
+gpio_pwm_fan2 = 12
 
 
 def htu_reset():
@@ -56,26 +55,15 @@ def read_environment():
 	return (temp, humidity)
 	
 
-def IsHeatingNeutral():
-	if (pi.read(gpio_heatingneutral) == 1):
-		return True
-	else:
-		return False
 
 def IsFanNeutral():
-	if (pi.read(gpio_fanneutral) == 1):
+	if (pi.read(gpio_fanneutral) == 0):
 		return True
 	else:
 		return False
 
-def HeatingNeutral(onOff):
-	if (onOff == True):
-		pi.write(gpio_heatingneutral, 0)
-	else:
-		pi.write(gpio_heatingneutral, 1)
-
-
 def FanNeutral(onOff):
+	print "Setting FanNeutral to ",onOff
 	if (onOff == True):
 		pi.write(gpio_fanneutral, 0)
 	else:
@@ -87,10 +75,10 @@ def Fan1(speed):
 		return False
 	
 	if (speed < 10):
-		pi.write(gpio_fan1, 0)
+		pi.write(gpio_fan1, 1)
 		print "[Fan1] Turning off."
 	else:
-		pi.write(gpio_fan1, 1)
+		pi.write(gpio_fan1, 0)
 		pi.hardware_PWM(gpio_pwm_fan1, 25000, speed*10000)
 		print "[Fan1] Setting to", speed,"%"
 
@@ -101,10 +89,10 @@ def Fan2(speed):
 		return False
 	
 	if (speed < 10):
-		pi.write(gpio_fan2, 0)
+		pi.write(gpio_fan2, 1)
 		print "[Fan2] Turning off."
 	else:
-		pi.write(gpio_fan2, 1)
+		pi.write(gpio_fan2, 0)
 		pi.hardware_PWM(gpio_pwm_fan2, 25000, speed*10000)
 		print "[Fan2] Setting to", speed,"%"
 
@@ -123,23 +111,45 @@ def FanSpeed2():
 	speed = pi.get_PWM_dutycycle(gpio_pwm_fan2)
 	return (speed / 10000)
 
-def IsHeating1():
-	if (IsHeatingNeutral() == False):
-		return False
-	
-	if (pi.read(gpio_heating1) == 0):
-		return False
-	else:
+
+def IsHeatingNeutral():
+	if (pi.read(gpio_heatingneutral) == 0):
 		return True
+	else:
+		return False
+
+
+def HeatNeutral(onOff):
+	print "Setting HeatNeutral to ",onOff
+	if (onOff == True):
+		pi.write(gpio_heatingneutral, 0)
+	else:
+		pi.write(gpio_heatingneutral, 1)
+
 
 def IsHeating1():
 	if (IsHeatingNeutral() == False):
 		return False
 	
-	if (pi.read(gpio_heating2) == 0):
-		return False
-	else:
+	if (pi.read(gpio_heating1) == 0):
 		return True
+	else:
+		return False
+
+def IsHeating2():
+	if (IsHeatingNeutral() == False):
+		return False
+	
+	if (pi.read(gpio_heating2) == 0):
+		return True
+	else:
+		return False
+
+def IsHeating():
+	if (IsHeating1() == True or IsHeating2() == True):
+		return True
+	else:
+		return False
 
 
 def Heat1(onOff):
@@ -148,10 +158,10 @@ def Heat1(onOff):
 		return False
 
 	if (onOff == True):
-		pi.write(gpio_heating1, 1)
+		pi.write(gpio_heating1, 0)
 		print "[Heat1] Turning on"
 	else:
-		pi.write(gpio_heating1, 0)
+		pi.write(gpio_heating1, 1)
 		print "[Heat1] Turning off"
 
 def Heat2(onOff):
@@ -160,14 +170,15 @@ def Heat2(onOff):
 		return False
 
 	if (onOff == True):
-		pi.write(gpio_heating2, 1)
+		pi.write(gpio_heating2, 0)
 		print "[Heat2] Turning on"
 	else:
-		pi.write(gpio_heating2, 0)
+		pi.write(gpio_heating2, 1)
 		print "[Heat2] Turning off"
 
 
 def startup():
+	print "Startup."
 	# Setup our GPIO's
 	pi.set_mode(gpio_heating1, pigpio.OUTPUT)
 	pi.set_mode(gpio_heating2, pigpio.OUTPUT)
@@ -175,35 +186,48 @@ def startup():
 	pi.set_mode(gpio_fan1, pigpio.OUTPUT)
 	pi.set_mode(gpio_fan2, pigpio.OUTPUT)
 	pi.set_mode(gpio_fanneutral, pigpio.OUTPUT)
-	pi.set_mode(gpio_pwm_fan1, pigpio.OUTPUT)
-	pi.set_mode(gpio_pwm_fan2, pigpio.OUTPUT)
 
 	htu_reset()
 
+	FanNeutral(True)
+	HeatNeutral(True)
+	Fan1(0)
+	Fan2(0)
+	Heat1(False)
+	Heat2(False)
+	print "Startup completed."
+	
 
 
 def makeBiltong(cmds):
-	# Targets
-	target_temp = 21
-	fan1_heatspeed=70
-	fan1_nonheatspeed=10
+	target_temp = 25
+	fan1_onspeed = 10
+	fan2_onspeed = 0
+	fan1_offspeed = 10
+	fan2_offspeed = 0
 
+	Fan1(10)
 
 	i = 0
 	while True:
 		if (i > 10):
 			(temp, hum) = read_environment()
 			now = datetime.datetime.today()	
-			line = "%s,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" %(now, temp, hum, IsHeating1(), IsHeating2(), FanSpeed1(), FanSpeed2(), target_temp)
+			line = "%s,%s,%s,%d,%d,%d,%d,%d\n" %(now, temp, hum, IsHeating1(), IsHeating2(), FanSpeed1(), FanSpeed2(), target_temp)
 			with open("biltong.csv", "a") as myfile:
 				myfile.write(line)
 
-			if (temp < target_temp and IsHeating() == False):
-				Heating(True)
-				Fan1(fan1_heatspeed)
-			if (temp >= (target_temp+0.5) and IsHeating() == True):
-				Heating(False)
-				Fan1(fan1_nonheatspeed)
+
+			if (temp < target_temp):
+				if (IsHeating1() == False):
+					Heat1(True)
+				if (IsHeating2() == False):
+					Heat2(True)
+			if (temp > target_temp and IsHeating2() == True):
+				Heat2(False)
+			if (temp >= (target_temp+2) and IsHeating1() == True):
+				Heat1(False)
+				
 			i=0
 		
 		if (cmds.empty() == False):
@@ -212,9 +236,12 @@ def makeBiltong(cmds):
 			print "Parsing: ", line
 
 			if line == 'quit':
-				Heating(False)
 				Fan1(0)
-				Neutral(False)
+				Fan2(0)
+				Heat1(False)
+				Heat2(False)
+				HeatNeutral(False)
+				FanNeutral(False)
 				break
 
 			if line.startswith('temp') == True:
@@ -223,32 +250,83 @@ def makeBiltong(cmds):
 				i=10
 			
 
-			if line.startswith('fanspeedon') == True:
-				fan1_heatspeed = int(line[11:])
-				print "Setting heating on fan speed to ", fan1_heatspeed
-				if (IsHeating() == True):
-					Fan1(fan1_heatspeed)
+			if line.startswith('fan') == True:
+				print "Onspeeds: ",fan1_onspeed,fan2_onspeed
+				print "Offspeeds: ",fan1_offspeed,fan2_offspeed
+				splitline = line.split(' ');
+				if (len(splitline) < 3):
+					print "Usage: fan <nr> <speed_below_temp> <speed_above_temp>"
+				else:
+					if (int(splitline[1]) == 0):
+						fan1_onspeed = int(splitline[2])
+						fan2_onspeed = int(splitline[2])
+						if (len(splitline) == 4):
+							fan1_offspeed = int(splitline[3])
+							fan2_offspeed = int(splitline[3])
+						else:
+							fan1_offspeed = fan1_onspeed
+							fan2_offspeed = fan1_onspeed
 
-			if line.startswith('fanspeedoff') == True:
-				fan1_nonheatspeed = int(line[12:])
-				print "Setting heating on fan speed to ", fan1_nonheatspeed
-				if (IsHeating() == False):
-					Fan1(fan1_nonheatspeed)
+					if (int(splitline[1]) == 1):
+						fan1_onspeed = int(splitline[2]) 
+						if (len(splitline) == 4):
+							fan1_offspeed = int(splitline[3])
+						else:
+							fan1_offspeed = fan1_onspeed
+						
+					if (int(splitline[1]) == 2):
+						fan2_onspeed = int(splitline[2])
+						if (len(splitline) == 4):
+							fan2_offspeed = int(splitline[3])
+						else:
+							fan2_offspeed = fan2_onspeed
+
+					if (IsHeating() == True):
+						print "Heating is on...",fan1_onspeed,fan2_onspeed
+						Fan1(fan1_onspeed)
+						Fan2(fan2_onspeed)
+					else:
+						print "Heating is off...",fan1_offspeed,fan2_offspeed
+						Fan1(fan1_offspeed)
+						Fan2(fan2_offspeed)
+				print "Onspeeds: ",fan1_onspeed,fan2_onspeed
+				print "Offspeeds: ",fan1_offspeed,fan2_offspeed
+
+			if line.startswith('heat') == True:
+				print "Current heating: ", IsHeating()
+				print "Current heat1: ", IsHeating1()
+				print "Current heat2: ", IsHeating2()
+				splitline = line.split(' ')
+				if (len(splitline) > 2):
+					onOff = False
+					if (splitline[2] == "on"):
+						onOff = True
+					if (int(splitline[1]) == 0):
+						Heat1(onOff)
+						Heat2(onOff)
+					if (int(splitline[1]) == 1):
+						Heat1(onOff)
+					if (int(splitline[1]) == 2):
+						Heat2(onOff)
+
 
 			if line == 'status':
 				(temp, hum) = read_environment()
 				print "Current temperateure/humid:", temp,"/",hum
-				print "Heating is:", IsHeating()
-				print "FanSpeed  :", FanSpeed1()
 				print "Target temp:", target_temp
-				print "Fan On Speed:", fan1_heatspeed
-				print "Fan Off Speed:", fan1_nonheatspeed
+				print "Heating1 is:", IsHeating1()
+				print "Heating2 is:", IsHeating2()
+				print "Fan1 Speed :", FanSpeed1()
+				print "Fan1 Speed :", FanSpeed2()
+				print "Fan1 On Speed:", fan1_onspeed
+				print "Fan1 Off Speed:", fan1_offspeed
+				print "Fan2 On Speed:", fan2_onspeed
+				print "Fan2 Off Speed:", fan2_offspeed
 
 			if line == 'help':
 				print "Possible commands:"
 				print "status - get the current biltongbox status"
-				print "fanspeedoff <nr 0-100> - set the fanspeed when heating is off"
-				print "fanspeedon <nr 0-100> - set the fanspeed when heating is on"
+				print "fan <nr> <speed_below_temp> <speed_above_temp> - fanspeed when heating is off"
 				print "temp <nr> - set the targetted temperature"
 
 		time.sleep(1)

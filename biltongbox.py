@@ -98,14 +98,14 @@ def Fan2(speed):
 
 
 def FanSpeed1():
-	if (IsFanNeutral() == False or pi.read(gpio_fan1) == 0):
+	if (IsFanNeutral() == False or pi.read(gpio_fan1) == 1):
 		return 0
 
 	speed = pi.get_PWM_dutycycle(gpio_pwm_fan1)
 	return (speed / 10000)
 
 def FanSpeed2():
-	if (IsFanNeutral() == False or pi.read(gpio_fan2) == 0):
+	if (IsFanNeutral() == False or pi.read(gpio_fan2) == 1):
 		return 0
 
 	speed = pi.get_PWM_dutycycle(gpio_pwm_fan2)
@@ -207,6 +207,10 @@ def makeBiltong(cmds):
 	fan2_offspeed = 0
 
 	Fan1(10)
+
+	with open("biltong.csv", "a") as myfile:
+		headerline = "DateTime, Temperature, Humidity, Heating 1, Heating 2, Fan 1 Speed, Fan 2 Speed, Target Temperature\n"
+		myfile.write(headerline)
 
 	i = 0
 	while True:
@@ -312,12 +316,12 @@ def makeBiltong(cmds):
 
 			if line == 'status':
 				(temp, hum) = read_environment()
-				print "Current temperateure/humid:", temp,"/",hum
+				print "Current temperature / humidity:", temp,"/",hum
 				print "Target temp:", target_temp
 				print "Heating1 is:", IsHeating1()
 				print "Heating2 is:", IsHeating2()
 				print "Fan1 Speed :", FanSpeed1()
-				print "Fan1 Speed :", FanSpeed2()
+				print "Fan2 Speed :", FanSpeed2()
 				print "Fan1 On Speed:", fan1_onspeed
 				print "Fan1 Off Speed:", fan1_offspeed
 				print "Fan2 On Speed:", fan2_onspeed

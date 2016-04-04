@@ -225,7 +225,7 @@ def makeBiltong(cmds):
 					Heat2(True)
 			if (temp > target_temp and IsHeating2() == True):
 				Heat2(False)
-			if (temp >= (target_temp+2) and IsHeating1() == True):
+			if (temp >= (target_temp+1) and IsHeating1() == True):
 				Heat1(False)
 				
 			i=0

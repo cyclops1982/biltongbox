@@ -3,6 +3,9 @@
 ####################################################################
 import web
 
+
+render=web.template.render('html/')
+
 urls = (
 	'/', 'index'
 )
@@ -10,7 +13,8 @@ urls = (
 
 class index:
 	def GET(self):
-		return "Hello, world!"
+		i = web.input(name=None)
+		return render.index(i.name)
 
 
 

@@ -1,0 +1,11 @@
+# Requires:
+* webpy - http://webpy.org
+	git clone git://github.com/webpy/webpy.git
+	ln -s `pwd`/webpy/web .
+
+
+* Python-mysqldb
+	sudo apt-get install python-mysqldb
+
+* pigpiod
+	http://abyz.co.uk/rpi/pigpio/index.html

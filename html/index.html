@@ -1,6 +1,18 @@
 $def with (name)
-
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Biltongbox!</title>
+	<meta name="description" content="Ruben's biltong box monitoring and control panel.">
+	<meta name="author" content="Ruben d'Arco">
+	<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+	<script src="js/jquery-2.2.3.min.js"></script>
 $if name:
-	I just called,to say <em>hello</em> $name enzo...
+	<h1>Hello $name!</h1>
 $else:
-	<em>Hello,</em> world!
+	<h1>Hello there...</h1>
+</body>
+</html>
